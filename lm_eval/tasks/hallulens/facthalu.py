@@ -15,13 +15,13 @@ from typing import List, Optional, Dict
 import pandas as pd
 from tqdm import tqdm   
 
-import prompt_templates
+import lm_eval.tasks.hallulens.prompt_templates
 from segtok.segmenter import split_single
 
 from transformers import AutoTokenizer
-import utils
-from tasks.longwiki.longwiki_retrieval import LongWikiRetrieval, LongWikiDB
-import tasks.longwiki.longwiki_utils as utils
+import lm_eval.tasks.hallulens.utils
+from lm_eval.tasks.hallulens.longwiki_retrieval import LongWikiRetrieval, LongWikiDB
+import lm_eval.tasks.hallulens.longwiki_utils as utils
 
 @dataclass
 class Claim:

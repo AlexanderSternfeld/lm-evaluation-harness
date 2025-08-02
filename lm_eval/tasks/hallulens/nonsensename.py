@@ -5,8 +5,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from utils import generate, jsonify_ans
-import prompt_templates
+from lm_eval.tasks.hallulens.utils import generate, jsonify_ans
+import lm_eval.tasks.hallulens.prompt_template_nonsense as prompt_templates
 import os
 import json
 
@@ -15,11 +15,15 @@ class NonsenseNameEval:
         self.evaluator_model = evaluator_model
         self.evaluator_tokenizer = evaluator_tokenizer
 
-    def run_eval(self, generation):
-        abstain_prompt = prompt_templates.ABSTAIN_PROMPT_PLACE_NONSENSE.format(name=generation['name'],
-            TYPE=generation['type_'],
-            PLACE=" in " + generation['place'] if generation['place'] else "",
-            generation=generation['generation'],
+    def run_eval_generated(self, generation, name, _type, place=None):
+        if place is not None:
+                _place=" in " + place
+        else:
+            _place = ""
+        abstain_prompt = prompt_templates.ABSTAIN_PROMPT_PLACE_NONSENSE.format(name=name,
+            TYPE=_type,
+            PLACE=_place,
+            generation=generation,
         )
 
         abstains_eval_raw = generate(abstain_prompt, self.evaluator_model, self.evaluator_tokenizer)
@@ -41,6 +45,9 @@ class NonsenseNameEval:
                 print(f"Error in eval_answer: {o}")
                 exit()
 
+        if len(abstains_eval_res) == 0:
+            #print("No valid response received from the evaluator.")
+            return {"abstention": None}
         return {"abstention": abstains_eval_res[0]}
 
 class NonsenseMixedEval(NonsenseNameEval):
@@ -49,14 +56,7 @@ class NonsenseMixedEval(NonsenseNameEval):
         self.eval_model = eval_model
         self.eval_tokenizer = eval_tokenizer
 
-        self.generations_file_path = f'{self.task_output_dir}/generation.jsonl'
-        self.res_path = f'{self.task_output_dir}/eval_results.json'
-        self.eval_raw_path = f'{self.task_output_dir}/raw_eval_res.jsonl'
-
-        self.evaluator = "meta-llama/Llama-3.1-8B-Instruct"
-
-
-    def automatic_abstention(self, generation, model, tokenizer):
+    def run_eval_mixed(self, generation, prompt, _type, name):
         JSON_KEY = "does_believe"
 
         eval_prompts = {
@@ -66,10 +66,10 @@ class NonsenseMixedEval(NonsenseNameEval):
             'bacteria' : prompt_templates.ABSTAIN_PROMPT_ANIMAL_NONSENSE,
         }
 
-        abstain_prompt = eval_prompts.get(generation['type']).format(
-                    prompt=generation['prompt'],
-                    name=generation['name'],
-                    generation=generation['generation'],
+        abstain_prompt = eval_prompts.get(_type).format(
+                    prompt=prompt,
+                    name=name,
+                    generation=generation,
                 )
 
         abstains_eval_raw = generate(abstain_prompt, self.eval_model, self.eval_tokenizer)

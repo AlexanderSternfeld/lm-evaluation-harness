@@ -7,7 +7,7 @@
 
 import os
 import json
-from utils import lm
+from lm_eval.tasks.hallulens.utils import generate
 from typing import List
 from tqdm.contrib.concurrent import thread_map
 
@@ -76,12 +76,9 @@ def remove_prefix(text:str , prefix:str):
         return text[len(prefix):]
     return text
 
-def parse_claim_extraction(claim_extraction: List[str], claim_extractor="meta-llama/Llama-3.1-405B-Instruct-FP8"):
+def parse_claim_extraction(claim_extraction: List[str]):
     res = []
-    if claim_extractor == "finetuned":
-        res = [x.strip() for x in claim_extraction.split("\n")]
-    else:
-        for claim in claim_extraction.split('\n'):
+    for claim in claim_extraction:
             if not claim.startswith('- ') or \
                 remove_prefix(claim, '- ').strip() == '':
                 continue
@@ -109,15 +106,17 @@ def read_eval_raw(eval_raw_file):
             eval_raw_res = [json.loads(line)["eval_res"] for line in f]
     return eval_raw_res
     
-def model_eval_step(evaluator, prompts, max_token=512, batch_size=16, max_workers=16, api_i=0):
-    eval_raw_res = thread_map(
-            lambda p: lm.generate(p, evaluator, i=api_i),
-            prompts,
-            max_workers=max_workers,
-            desc=f"using vllm {evaluator}")
-    return eval_raw_res
+# def model_eval_step(evaluator, prompts, max_token=512, batch_size=16, max_workers=16, api_i=0):
+    
+    
+#     eval_raw_res = thread_map(
+#             lambda p: lm.generate(p, evaluator, i=api_i),
+#             prompts,
+#             max_workers=max_workers,
+#             desc=f"using vllm {evaluator}")
+#     return eval_raw_res
 
-def jsonify_ans(raw_responses, eval_prompts, evaluator, key):
+def jsonify_ans(raw_responses, eval_prompts, model, tokenizer, key):
 
     def check_validity(gen):
         if '{{"{}":false}}'.format(key) in gen.lower():
@@ -143,7 +142,7 @@ def jsonify_ans(raw_responses, eval_prompts, evaluator, key):
                 error_count = 0
                 
                 while error:
-                    re_eval = lm.api_generate(p, evaluator)
+                    re_eval = generate(p, model, tokenizer)
 
                     try: 
                         print("\n** RETRY:", re_eval)

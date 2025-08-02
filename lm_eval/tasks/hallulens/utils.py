@@ -9,8 +9,9 @@ def generate(prompt, model, tokenizer, temperature=0.0, top_p=1.0, max_tokens=51
             tokenize=False,
             add_generation_prompt=True,
         )
-        max_len = min(tokenizer.model_max_length, 4096)  # defensive coding
-        input = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_len).to(model.device)
+        #max_len = min(tokenizer.model_max_length, 4096)  # defensive coding
+        #input = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_len).to(model.device)
+        input = tokenizer(prompt, return_tensors="pt", truncation=True).to(model.device)
         if temperature > 0.0:
             output = model.generate(
                 input_ids=input["input_ids"],
@@ -37,8 +38,9 @@ def generate_batch(prompts, model, tokenizer, temperature=0.0, top_p=1.0, max_to
         tokenizer.apply_chat_template([{"role": "user", "content": p}], tokenize=False, add_generation_prompt=True)
         for p in prompts
     ]
-    max_len = min(tokenizer.model_max_length, 4096)
-    inputs = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True, max_length=max_len).to(model.device)
+    #max_len = min(tokenizer.model_max_length, 4096)
+    #inputs = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True, max_length=max_len).to(model.device)
+    inputs = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True).to(model.device)
 
     output = model.generate(
         input_ids=inputs["input_ids"],
@@ -207,7 +209,7 @@ def jsonify_ans(
         try:
             jsonifyed_res.append(json.loads(raw_response))
         except:
-            print(f"Error in eval_answer: {raw_response}")
+            #print(f"Error in eval_answer: {raw_response}")
             error = True
             error_count = 0
             
@@ -215,7 +217,7 @@ def jsonify_ans(
                 re_eval = generate(eval_prompt, model, tokenizer)
                     
                 try: 
-                    print("\n** RETRY:", re_eval)
+                    #print("\n** RETRY, prompt is:", eval_prompt)
                     if check_validity(re_eval) != -1:
                         json_res = json.loads(check_validity(re_eval))
                     else:
@@ -223,14 +225,14 @@ def jsonify_ans(
                     error = False
                     
                 except:
-                    print("*** trying again** \n")
+                    #print("*** trying again** \n")
                     error = True
                 error_count += 1
 
                 if error_count > 3:
-                    print("Error count exceeded 3. Skipping this prompt.")
+                    #print("Error count exceeded 3. Skipping this prompt.")
                     jsonifyed_res.append({"error": "Error count exceeded 3. Skipping this prompt."})
-                    break
+                    return []
             jsonifyed_res.append(json_res)
             print("<<< PASS >>>")
     return jsonifyed_res

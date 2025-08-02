@@ -12,8 +12,8 @@ import numpy as np
 import pickle as pkl
 from typing import List
 
-from utils.cache import Cache
-from tasks.longwiki.retrieval import DocDB
+from lm_eval.tasks.hallulens.cache import Cache
+from lm_eval.tasks.hallulens.retrieval import DocDB
 from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassification
 
 class LongWikiDB(DocDB):
