@@ -8,6 +8,7 @@
 import os
 import time
 import json
+import numpy as np
 
 from dataclasses import dataclass
 from typing import List, Optional, Dict
@@ -91,9 +92,9 @@ class FactHalu:
         """
         final_result = {
             "abstained": 0,
-            "precision": None,
-            "recall": None,
-            "f1": None,
+            "precision": np.nan,
+            "recall": np.nan,
+            "f1": np.nan,
         }
         #initiate generation object
         _generation = Generation(
